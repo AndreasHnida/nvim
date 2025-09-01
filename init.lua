@@ -187,6 +187,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+-- Terminal split keymaps
+vim.keymap.set('n', '<leader>tt', ':split | terminal<CR>', { desc = 'Open [T]erminal in horizontal split' })
+vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open [T]erminal in [V]ertical split' })
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
@@ -685,21 +689,41 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
 
-        -- Vue LSP (Volar)
-        volar = {},
+        -- Vue LSP (Volar) v3 - requires vtsls for TypeScript support
+        ['vue_ls'] = {},
 
-        -- TypeScript/JavaScript LSP with Vue support
-        ts_ls = {
-          init_options = {
-            plugins = {
-              {
-                name = '@vue/typescript-plugin',
-                location = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server',
-                languages = { 'vue' },
+        -- vtsls replaces ts_ls/typescript-language-server for Vue 3 support
+        vtsls = {
+          filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+          on_attach = function(client, bufnr)
+            -- Disable document highlight to prevent errors
+            client.server_capabilities.documentHighlightProvider = false
+          end,
+          settings = {
+            complete_function_calls = true,
+            vtsls = {
+              enableMoveToFileCodeAction = true,
+              experimental = {
+                completion = {
+                  enableServerSideFuzzyMatch = true,
+                },
+              },
+            },
+            typescript = {
+              updateImportsOnFileMove = { enabled = 'always' },
+              suggest = {
+                completeFunctionCalls = true,
+              },
+              inlayHints = {
+                parameterNames = { enabled = 'literals' },
+                parameterTypes = { enabled = true },
+                variableTypes = { enabled = true },
+                propertyDeclarationTypes = { enabled = true },
+                functionLikeReturnTypes = { enabled = true },
+                enumMemberValues = { enabled = true },
               },
             },
           },
-          filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
         },
 
         lua_ls = {
@@ -734,6 +758,9 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'prettier', -- JavaScript/TypeScript/Vue formatter
+        'vtsls', -- TypeScript language server for Vue support
+        'vue-language-server', -- Vue language server
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -743,14 +770,25 @@ require('lazy').setup({
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
+            -- Map Mason package names to lspconfig server names
+            local server_mappings = {
+              ['vue-language-server'] = 'vue_ls',
+              -- vtsls doesn't need mapping as Mason name matches LSPconfig name
+            }
+            local lspconfig_name = server_mappings[server_name] or server_name
             -- This handles overriding only values explicitly passed
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+            require('lspconfig')[lspconfig_name].setup(server)
           end,
         },
       }
+      
+      -- Explicitly setup vtsls with Vue support since vue_ls requires it
+      local vtsls_config = servers.vtsls or {}
+      vtsls_config.capabilities = vim.tbl_deep_extend('force', {}, capabilities, vtsls_config.capabilities or {})
+      require('lspconfig').vtsls.setup(vtsls_config)
     end,
   },
 
@@ -786,6 +824,14 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        vue = { 'prettier' },
+        javascript = { 'prettier' },
+        typescript = { 'prettier' },
+        javascriptreact = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        css = { 'prettier' },
+        html = { 'prettier' },
+        json = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
