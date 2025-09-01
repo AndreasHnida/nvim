@@ -191,6 +191,16 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 vim.keymap.set('n', '<leader>tt', ':split | terminal<CR>', { desc = 'Open [T]erminal in horizontal split' })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open [T]erminal in [V]ertical split' })
 
+-- Toggle true/false under cursor
+vim.keymap.set('n', '<leader>tf', function()
+  local word = vim.fn.expand('<cword>')
+  if word == 'true' then
+    vim.cmd('normal! ciwfalse')
+  elseif word == 'false' then
+    vim.cmd('normal! ciwtrue')
+  end
+end, { desc = '[T]oggle true/[F]alse' })
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
@@ -598,7 +608,8 @@ require('lazy').setup({
           --
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
+          -- Skip document highlights for vtsls as it causes errors
+          if client and client.name ~= 'vtsls' and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
@@ -695,6 +706,7 @@ require('lazy').setup({
         -- vtsls replaces ts_ls/typescript-language-server for Vue 3 support
         vtsls = {
           filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+          root_dir = require('lspconfig.util').root_pattern('tsconfig.json', 'package.json', 'jsconfig.json', '.git'),
           on_attach = function(client, bufnr)
             -- Disable document highlight to prevent errors
             client.server_capabilities.documentHighlightProvider = false
@@ -769,6 +781,11 @@ require('lazy').setup({
         automatic_installation = false,
         handlers = {
           function(server_name)
+            -- Skip ts_ls and typescript-language-server as we use vtsls instead
+            if server_name == 'ts_ls' or server_name == 'typescript-language-server' then
+              return
+            end
+            
             local server = servers[server_name] or {}
             -- Map Mason package names to lspconfig server names
             local server_mappings = {
@@ -778,7 +795,7 @@ require('lazy').setup({
             local lspconfig_name = server_mappings[server_name] or server_name
             -- This handles overriding only values explicitly passed
             -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
+            -- certain features of an LSP (for example, turning off formatting for vtsls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[lspconfig_name].setup(server)
           end,

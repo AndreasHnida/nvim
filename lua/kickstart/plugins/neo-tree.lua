@@ -9,12 +9,13 @@ return {
     'nvim-tree/nvim-web-devicons', -- not strictly required, but recommended
     'MunifTanjim/nui.nvim',
   },
-  lazy = false,
+  lazy = true,  -- Make neo-tree lazy load instead of loading immediately
   keys = {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
     filesystem = {
+      hijack_netrw_behavior = 'disabled',  -- Disable neo-tree from hijacking directory opening
       window = {
         mappings = {
           ['\\'] = 'close_window',
