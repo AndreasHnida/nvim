@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -172,6 +172,9 @@ vim.o.confirm = true
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+vim.keymap.set('n', '<leader>w', '<cmd>:w<cr>', { desc = 'Save file' })
+vim.keymap.set('n', '<leader>W', '<cmd>:wqa!<cr>', { desc = 'Save file force and exit' })
+vim.keymap.set('n', 'q', '<cmd>:bd<cr>', { desc = 'Buffer delete' })
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
@@ -681,8 +684,23 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+
+        -- Vue LSP (Volar)
+        volar = {},
+
+        -- TypeScript/JavaScript LSP with Vue support
+        ts_ls = {
+          init_options = {
+            plugins = {
+              {
+                name = '@vue/typescript-plugin',
+                location = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server',
+                languages = { 'vue' },
+              },
+            },
+          },
+          filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -886,9 +904,22 @@ require('lazy').setup({
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
+        transparent = true,
         styles = {
           comments = { italic = false }, -- Disable italics in comments
+          sidebars = 'transparent',
+          floats = 'transparent',
         },
+        on_colors = function(c)
+          -- Because lualine broke stuff with the latest commit
+          c.bg_statusline = c.none
+        end,
+        on_highlights = function(hl, c)
+          -- TabLineFill is currently set to black
+          hl.TabLineFill = {
+            bg = c.none,
+          }
+        end,
       }
 
       -- Load the colorscheme here.
@@ -904,6 +935,30 @@ require('lazy').setup({
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
+      local function set_transparent_highlights()
+        local hl_groups = {
+          'MiniStatuslineModeNormal',
+          'MiniStatuslineModeInsert',
+          'MiniStatuslineModeVisual',
+          'MiniStatuslineModeReplace',
+          'MiniStatuslineModeCommand',
+          'MiniStatuslineModeOther',
+          'MiniStatuslineFilename',
+          'MiniStatuslineFileinfo',
+          'MiniStatuslineDevinfo',
+          'MiniStatuslineInactive',
+          'StatusLine',
+          'StatusLineNC',
+        }
+
+        for _, group in ipairs(hl_groups) do
+          local current_hl = vim.api.nvim_get_hl(0, { name = group })
+          if current_hl then
+            current_hl.bg = nil -- Remove background
+            vim.api.nvim_set_hl(0, group, current_hl)
+          end
+        end
+      end
       -- Better Around/Inside textobjects
       --
       -- Examples:
@@ -925,7 +980,15 @@ require('lazy').setup({
       local statusline = require 'mini.statusline'
       -- set use_icons to true if you have a Nerd Font
       statusline.setup { use_icons = vim.g.have_nerd_font }
-
+      -- Apply transparency immediately
+      set_transparent_highlights()
+      -- Reapply transparency when colorscheme changes
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        callback = function()
+          -- Small delay to let the colorscheme fully load
+          vim.defer_fn(set_transparent_highlights, 10)
+        end,
+      })
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
       -- cursor location to LINE:COLUMN
@@ -944,7 +1007,23 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'vue',
+        'javascript',
+        'typescript',
+        'css',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -974,17 +1053,17 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
@@ -1010,7 +1089,10 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+  require 'custom.config.hot-reload',
 })
-
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+-- open config files
+vim.api.nvim_create_user_command('ConfigMe', function()
+  vim.cmd [[Telescope find_files cwd=~/.config/nvim/]]
+  print 'showing config files'
+end, { desc = 'Show Config Files' })
