@@ -220,10 +220,19 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
--- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
--- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
--- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
--- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
+vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
+vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
+vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+
+
+vim.keymap.set("n", "J", "5j")
+vim.keymap.set("n", "K", "5k")
+-- Move lines up/down with Alt+J and Alt+K
+vim.api.nvim_set_keymap('n', '<S-A-j>', ':m .+1<CR>==', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<S-A-k>', ':m .-2<CR>==', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<S-A-j>', ':m \'>+1<CR>gv=gv', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<S-A-k>', ':m \'<-2<CR>gv=gv', { noremap = true, silent = true })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -1041,12 +1050,13 @@ require('lazy').setup({
 			--  - yinq - [Y]ank [I]nside [N]ext [Q]uote
 			--  - ci'  - [C]hange [I]nside [']quote
 			require('mini.ai').setup { n_lines = 500 }
-
+			require('mini.starter').setup()
 			-- Add/delete/replace surroundings (brackets, quotes, etc.)
 			--
 			-- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
 			-- - sd'   - [S]urround [D]elete [']quotes
 			-- - sr)'  - [S]urround [R]eplace [)] [']
+
 			require('mini.surround').setup()
 
 			-- Simple and easy statusline.
