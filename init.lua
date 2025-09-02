@@ -192,6 +192,7 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- Terminal split keymaps
 vim.keymap.set('n', '<leader>tt', ':split | terminal<CR>', { desc = 'Open [T]erminal in horizontal split' })
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { desc = 'Open [T]erminal in [V]ertical split' })
+vim.keymap.set('t', '<C-c>', '<cmd>:bd<cr>')
 
 -- Toggle true/false under cursor
 vim.keymap.set('n', '<leader>tf', function()
