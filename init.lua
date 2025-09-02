@@ -177,7 +177,7 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 vim.keymap.set('n', '<leader>w', '<cmd>:w<cr>', { desc = 'Save file' })
 vim.keymap.set('n', '<leader>W', '<cmd>:wqa!<cr>', { desc = 'Save file force and exit' })
 vim.keymap.set('n', 'q', '<cmd>:bd<cr>', { desc = 'Buffer delete' })
-
+vim.keymap.set('n', 'Q', '<cmd>:qa!<cr>', { desc = 'Force Quit Vim' })
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
@@ -1046,7 +1046,6 @@ require('lazy').setup({
       -- - sr)'  - [S]urround [R]eplace [)] [']
 
       require('mini.surround').setup()
-      require('mini.files').setup()
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
       --  and try some other statusline plugin
