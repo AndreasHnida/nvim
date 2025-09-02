@@ -31,6 +31,16 @@ return {
     open_for_directories = true,
     keymaps = {
       show_help = '<f1>',
+      open_file_in_vertical_split = '<c-v>',
+      open_file_in_horizontal_split = '<c-x>',
+      open_file_in_tab = '<c-t>',
+      grep_in_directory = '<c-s>',
+      replace_in_directory = '<c-g>',
+      cycle_open_buffers = '<tab>',
+      copy_relative_path_to_selected_files = '<c-y>',
+      send_to_quickfix_list = '<c-q>',
+      change_working_directory = '<c-\\>',
+      open_and_pick_window = '<c-o>',
     },
     -- the floating window scaling factor. 1 means 100%, 0.9 means 90%, etc.
     floating_window_scaling_factor = 1,
@@ -44,7 +54,7 @@ return {
 
     -- the zindex of the yazi floating window. Can be used to make the yazi
     -- window fullscreen. See `:h nvim_open_win()` for more information.
-    yazi_floating_window_zindex = 60,
+    yazi_floating_window_zindex = 50,
   },
   -- 👇 if you use `open_for_directories=true`, this is recommended
   init = function()
