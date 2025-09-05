@@ -111,6 +111,8 @@ vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
 vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
 vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
 
+-- Toggle to last buffer with <leader><tab>
+vim.keymap.set("n", "<leader><tab>", "<C-^>", { desc = "Switch to last buffer" })
 -- Movement
 vim.keymap.set('n', 'J', '5j')
 vim.keymap.set('n', 'K', '5k')
@@ -404,31 +406,6 @@ require('lazy').setup({
 			'saghen/blink.cmp',
 		},
 		config = function()
-			-- Brief aside: **What is LSP?**
-			--
-			-- LSP is an initialism you've probably heard, but might not understand what it is.
-			--
-			-- LSP stands for Language Server Protocol. It's a protocol that helps editors
-			-- and language tooling communicate in a standardized fashion.
-			--
-			-- In general, you have a "server" which is some tool built to understand a particular
-			-- language (such as `gopls`, `lua_ls`, `rust_analyzer`, etc.). These Language Servers
-			-- (sometimes called LSP servers, but that's kind of like ATM Machine) are standalone
-			-- processes that communicate with some "client" - in this case, Neovim!
-			--
-			-- LSP provides Neovim with features like:
-			--  - Go to definition
-			--  - Find references
-			--  - Autocompletion
-			--  - Symbol Search
-			--  - and more!
-			--
-			-- Thus, Language Servers are external tools that must be installed separately from
-			-- Neovim. This is where `mason` and related plugins come into play.
-			--
-			-- If you're wondering about lsp vs treesitter, you can check out the wonderfully
-			-- and elegantly composed help section, `:help lsp-vs-treesitter`
-
 			--  This function gets run when an LSP attaches to a particular buffer.
 			--    That is to say, every time a new file is opened that is associated with
 			--    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
@@ -595,19 +572,37 @@ require('lazy').setup({
 				-- But for many setups, the LSP (`ts_ls`) will work just fine
 
 				-- Vue LSP (Volar) v3 - requires vtsls for TypeScript support
-				['vue_ls'] = {},
+				['vue_ls'] = {
+					settings = {
+						vue = {
+							inlayHints = {
+								destructuredProps = { enabled = true },
+								inlineHandlerLoading = { enabled = true },
+								missingProps = { enabled = true },
+								optionsWrapper = { enabled = true },
+								vBindShorthand = { enabled = true },
+							},
+						},
+					},
+				},
 
 				-- vtsls replaces ts_ls/typescript-language-server for Vue 3 support
 				vtsls = {
 					filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
 					root_dir = require('lspconfig.util').root_pattern('tsconfig.json', 'package.json', 'jsconfig.json', '.git'),
-					on_attach = function(client, bufnr)
-						-- Disable document highlight to prevent errors
-						client.server_capabilities.documentHighlightProvider = false
-					end,
 					settings = {
-						complete_function_calls = true,
 						vtsls = {
+							tsserver = {
+								globalPlugins = {
+									{
+										name = "@vue/typescript-plugin", -- Wichtig für Nuxt3/Vue3 compatibility
+										location = vim.fn.stdpath("data") ..
+												"/mason/packages/vue-language-server/node_modules/@vue/language-server",
+										languages = { "vue" },
+										configNamespace = "typescript",
+									},
+								},
+							},
 							enableMoveToFileCodeAction = true,
 							experimental = {
 								completion = {
@@ -616,22 +611,21 @@ require('lazy').setup({
 							},
 						},
 						typescript = {
-							updateImportsOnFileMove = { enabled = 'always' },
+							updateImportsOnFileMove = { enabled = "always" },
 							suggest = {
 								completeFunctionCalls = true,
 							},
 							inlayHints = {
-								parameterNames = { enabled = 'literals' },
-								parameterTypes = { enabled = true },
-								variableTypes = { enabled = true },
-								propertyDeclarationTypes = { enabled = true },
-								functionLikeReturnTypes = { enabled = true },
 								enumMemberValues = { enabled = true },
+								functionLikeReturnTypes = { enabled = true },
+								parameterNames = { enabled = "all" }, -- Empfehlung für mehr Kontext
+								parameterTypes = { enabled = true, suppressWhenArgumentMatchesName = true },
+								propertyDeclarationTypes = { enabled = true },
+								variableTypes = { enabled = true },
 							},
 						},
 					},
 				},
-
 				lua_ls = {
 					-- cmd = { ... },
 					-- filetypes = { ... },
@@ -807,7 +801,7 @@ require('lazy').setup({
 				-- <c-k>: Toggle signature help
 				--
 				-- See :h blink-cmp-config-keymap for defining your own keymap
-				preset = 'default',
+				preset = 'enter',
 
 				-- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
 				--    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -987,6 +981,7 @@ require('lazy').setup({
 				additional_vim_regex_highlighting = { 'ruby' },
 			},
 			indent = { enable = true, disable = { 'ruby' } },
+			context = { enable = true }
 		},
 		-- There are additional nvim-treesitter modules that you can use to interact
 		-- with nvim-treesitter. You should go explore a few and see what interests you:
